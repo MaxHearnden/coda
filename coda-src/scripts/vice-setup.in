@@ -39,7 +39,7 @@ codaconfedit () {
 #
 # arguments
 #
-if ["$1" = "-d"]; then
+if [ "$1" = "-d" ]; then
     destDir="$2"
     shift 2
 fi
