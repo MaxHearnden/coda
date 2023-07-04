@@ -14,17 +14,31 @@
 #	splice in the right location of the venus.conf file.
 prefix=@prefix@
 exec_prefix=@exec_prefix@
+destDir=
+
+codaconfedit () {
+    if [ "$destDir" = "" ]; then
+        "@sbindir@/codaconfedit" "$@"
+    else
+        "@sbindir@/codaconfedit" -d "$destDir" "$@"
+    fi
+}
+
+if [ "$1" = "-d" ]; then
+    destDir=$2
+    shift 2
+fi
 
 OS=$(uname -s | cut -c1-5)
 
 if [ "$OS" = CYGWI ] ; then
     if [ $# != 3 ]; then
-	echo "Usage: $0 default-realm-name cachesize-in-kb drive-letter"
+	echo "Usage: $0 [-d <destDir>] default-realm-name cachesize-in-kb drive-letter"
 	exit 1
     fi
 else
     if [ $# != 1 ] && [ $# != 2 ]; then
-	echo "Usage: $0 default-realm-name [cachesize-in-kb]"
+	echo "Usage: $0 [-d <destDir>] default-realm-name [cachesize-in-kb]"
 	exit 1
     fi
 fi
@@ -51,10 +65,10 @@ fi
 #restart=0
 #[ ! -f /etc/coda/venus.conf ] && restart=1
 
-[ "$REALM" ] && @sbindir@/codaconfedit venus.conf realm "$REALM"
-@sbindir@/codaconfedit venus.conf cacheblocks "$CACHESIZE"
+[ "$REALM" ] && codaconfedit venus.conf realm "$REALM"
+codaconfedit venus.conf cacheblocks "$CACHESIZE"
 
-conf=$(@sbindir@/codaconfedit venus.conf)
+conf=$(codaconfedit venus.conf)
 
 #if [ $restart = 1 ] ; then
 #    echo "We just created an initial configuration file /etc/coda/venus.conf"
@@ -170,9 +184,9 @@ if [ "$OS" = CYGWI ]; then
 
   ln -s "/cygdrive/$MOUNTPOINT" /coda
 
-  @sbindir@/codaconfedit venus.conf mapprivate 0
-  @sbindir@/codaconfedit venus.conf mountpoint "$MOUNTPOINT:"
-  @sbindir@/codaconfedit venus.conf cache_prefix "/??/$(mount | grep ' / ' | cut -d' ' -f1 | tr \\\\\\\\ /)"
+  codaconfedit venus.conf mapprivate 0
+  codaconfedit venus.conf mountpoint "$MOUNTPOINT:"
+  codaconfedit venus.conf cache_prefix "/??/$(mount | grep ' / ' | cut -d' ' -f1 | tr \\\\\\\\ /)"
 
 else
 

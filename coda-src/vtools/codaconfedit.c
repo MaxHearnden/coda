@@ -134,7 +134,7 @@ static void do_rewrite(const char *conffile, int argc, char **argv)
     FAILIF(ret, "Failed to update configuration file '%s'\n", conffile);
 }
 
-static void copy_template(char *confbase)
+static void copy_template(char *confbase, char *dest)
 {
     char *tmpname = NULL, *conffile;
     int ret, len;
@@ -149,12 +149,19 @@ static void copy_template(char *confbase)
     FAILIF(!conffile, "Configuration file template '%s.ex' not found\n",
            confbase);
 
-    /* strip the '.ex' */
-    len     = strlen(conffile);
-    tmpname = malloc(len + 1);
-    FAILIF(!tmpname, "Allocation failed");
-    strcpy(tmpname, conffile);
-    tmpname[len - 3] = '\0';
+    if (!dest) {
+        /* strip the '.ex' */
+        len     = strlen(conffile);
+        tmpname = malloc(len + 1);
+        FAILIF(!tmpname, "Allocation failed");
+        strcpy(tmpname, conffile);
+        tmpname[len - 3] = '\0';
+    } else {
+        /* install to dest */
+        tmpname = malloc(strlen(dest) + strlen(confbase) + 2);
+        FAILIF(!tmpname, "Allocation failed");
+        sprintf(tmpname, "%s/%s", dest, tmpname);
+    }
 
     /* copy the template configuration file */
     ret = copyfile_byname(conffile, tmpname);
@@ -164,10 +171,21 @@ static void copy_template(char *confbase)
 
 int main(int argc, char **argv)
 {
-    char *conffile;
+    char *conffile,
+         *dest = NULL;
     const char *p, *val;
     int i, len;
-    FAILIF(argc < 2, "Usage: %s <conffile> [<variable> [<value>]]\n", argv[0]);
+    FAILIF(argc < 2, "Usage: %s [-d <destDir>] <conffile> [<variable> [<value>]]\n", argv[0]);
+
+    /* provide an option to install the file to an alternative location as
+    the template might be installed to a read only directory e.g. /nix/store */
+
+    if (!strcmp(argv[1], "-d")) {
+        // codaconfedit -d /etc/coda file
+        FAILIF(argc < 4, "Usage: %s [-d <destDir>] <conffile> [<variable> [<value>]]\n", argv[0]);
+        dest = argv[2];
+        argv += 2; // shift 2
+    }
 
     conffile = codaconf_file(argv[1]);
 
@@ -185,7 +203,7 @@ int main(int argc, char **argv)
      * there would otherwise be no other way to use the default template
      * without modifications */
     if (!conffile) {
-        copy_template(argv[1]);
+        copy_template(argv[1], dest);
         conffile = codaconf_file(argv[1]);
         FAILIF(!conffile, "Failed to copy template file to '%s'\n", argv[1]);
     }

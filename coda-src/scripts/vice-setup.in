@@ -18,6 +18,7 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
+destDir=
 
 echon() {
     if [ "$(echo -n)" = "-n" ] ; then
@@ -27,11 +28,24 @@ echon() {
     fi
 }
 
+codaconfedit () {
+    if [ "$destDir" = "" ]; then
+        "@sbindir@/codaconfedit" "$@"
+    else
+        "@sbindir@/codaconfedit" -d "$destDir" "$@"
+    fi
+}
+
 #
 # arguments
 #
+if ["$1" = "-d"]; then
+    destDir="$2"
+    shift 2
+fi
+
 if [ $# != 0 ] ; then
-    echo "Usage: $0"
+    echo "Usage: $0 [-d <destDir>]"
     exit 1
 fi
 
@@ -58,7 +72,7 @@ export hn
 #
 # initial information
 #
-conf="$(@sbindir@/codaconfedit server.conf)"
+conf="$(codaconfedit server.conf)"
 if [ "$conf" != /dev/null ] ; then
     yesno=""
     echo "You already have a file $conf!"
@@ -86,7 +100,7 @@ echo 'Setting up config files for a coda server.'
 
 # figure out where the server.conf template, and thus the new server.conf
 # file are located.
-conf_template="$("@sbindir@/codaconfedit" server.conf.ex)"
+conf_template="$(codaconfedit server.conf.ex)"
 if [ "$conf_template" = /dev/null ] ; then
     echo "Could not find the server.conf.ex template file"
     exit 1
@@ -102,12 +116,12 @@ if [ "$vicedir" = "" ] ; then
     vicedir=/vice
 fi
 
-"@sbindir@/codaconfedit" server.conf vicedir "$vicedir"
+codaconfedit server.conf vicedir "$vicedir"
 #
 # server.conf standard
 #
-"@sbindir@/codaconfedit" server.conf rvmtruncate 5
-"@sbindir@/codaconfedit" server.conf trace 100
+codaconfedit server.conf rvmtruncate 5
+codaconfedit server.conf trace 100
 
 
 echo "Setting up $vicedir."
@@ -276,8 +290,8 @@ while [ "$yesno" = "" ]; do
     read -r yesno
 
     case "$(echo "$yesno" | tr '[:upper:]' '[:lower:]')" in
-    y|yes) "@sbindir@/codaconfedit" server.conf codatunnel 1 ;;
-    n|no)  "@sbindir@/codaconfedit" server.conf codatunnel 0 ;;
+    y|yes) codaconfedit server.conf codatunnel 1 ;;
+    n|no)  codaconfedit server.conf codatunnel 0 ;;
     *) yesno="" ; echo "Please answer yes or no." ;;
     esac
 done

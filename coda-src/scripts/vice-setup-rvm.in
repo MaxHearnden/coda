@@ -17,6 +17,8 @@
 #
 #*/
 
+destDir=
+
 echon() {
     if [ "$(echo -n)" = "-n" ] ; then
 	echo "$@"'\c'
@@ -27,6 +29,18 @@ echon() {
 
 fullname() {
     ( cd "$(dirname "$1")" ; echo "$(pwd)/$(basename "$1")" )
+}
+
+if [ "$1" = "-d" ]; then
+    destDir=$2
+fi
+
+codaconfedit () {
+    if [ "$destDir" = "" ]; then
+        "@sbindir@/codaconfedit" "$@"
+    else
+        "@sbindir@/codaconfedit" -d "$destDir" "$@"
+    fi
 }
 
 # exit if errors
@@ -46,7 +60,7 @@ vicedir=/vice
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-conf="$("@sbindir@/codaconfedit" server.conf)"
+conf="$(codaconfedit server.conf)"
 if [ "$conf" != /dev/null ] ; then
   . "$conf"
   haveconf=1
@@ -244,9 +258,9 @@ chunk=64
 
 if [ $haveconf = 1 ] ; then
     conffile="$(basename "$conf")"
-    "@sbindir@/codaconfedit" "$conffile" rvm_log "$log"
-    "@sbindir@/codaconfedit" "$conffile" rvm_data "$data"
-    "@sbindir@/codaconfedit" "$conffile" rvm_data_length "$dsparm"
+    codaconfedit "$conffile" rvm_log "$log"
+    codaconfedit "$conffile" rvm_data "$data"
+    codaconfedit "$conffile" rvm_data_length "$dsparm"
 else
     echo "\-rvm $log $data $dsparm" >> "$vicedir/srv.conf"
 fi
